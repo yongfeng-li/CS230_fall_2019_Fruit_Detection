@@ -1,6 +1,14 @@
 # CS230_fall_2019_Fruit_Detection
 CS230 project - Fruit Detection for group of Anna-Yongfeng-Ajay (AYA)
 
+
+
+20191102:Update---
+
+uploaded the "MaskRCNN train" & coco data selection file. Anna 
+
+------------------------------------------------------------------------------------
+
 Hi GUYS, ADDED some AWS tips, saw someone asking this on piazza
 
 1) install aws-cli :https://docs.aws.amazon.com/zh_cn/cli/latest/userguide/cli-chap-install.html
