@@ -54,7 +54,12 @@ imgDict = coco.loadImgs(imgIds)
 img1 = pd.DataFrame.from_dict(imgDict)
 data_list=img1['file_name']
 
+
 X_train,X_val = train_test_split(data_list,test_size=0.3, random_state=42)
+img_id_train=X_train['id']
+img_id_dev=X_val['id']
+X_train=X_train['file_name']
+X_val=X_val['file_name']
 X_train.reset_index(drop=True,inplace=True)
 X_val.reset_index(drop=True,inplace=True)
 #=====================create folder for all fruit picutres===========
