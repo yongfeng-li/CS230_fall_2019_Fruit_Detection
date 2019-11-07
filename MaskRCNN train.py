@@ -42,15 +42,9 @@ dataset_dir = os.path.join(dataset_dir, subset)
 # =================Step 3:data procss==============    
 ############################################################
 #  Defind pre-process
-############################################################
+###########################################################
 class FruitDataset(utils.Dataset):
     def load_fruit(self,subset):
-        # Add classes
-        self.add_class("fruit", 50, "orange")
-        self.add_class("fruit", 51, "broccoli")
-        self.add_class("fruit", 47, "banana")
-        self.add_class("fruit", 48, "apple")
-        self.add_class("fruit", 52, "carrot")
         
         #annotation path
         annFile='D:/coco/annotations/instances_train2014.json'
@@ -58,17 +52,20 @@ class FruitDataset(utils.Dataset):
         
         dataset_dir='D:\coco'
         assert subset in ["train", "val"]
+        
+            
         image_dir = os.path.join(dataset_dir, subset)
         
         #=====need to run the coco_preprocess.py code
-        image_ids=imgIds
-        
+        if subset=='train':
+            image_ids=img_id_train
+        else:
+            image_ids=img_id_dev
+            
         # Add classes
-        self.add_class("fruit", 50, "orange")
-        self.add_class("fruit", 51, "broccoli")
-        self.add_class("fruit", 47, "banana")
-        self.add_class("fruit", 48, "apple")
-        self.add_class("fruit", 52, "carrot")
+        class_ids = sorted(coco.getCatIds())
+        for i in class_ids:
+            self.add_class("coco", i, coco.loadCats(i)[0]["name"])
 
         # Add images
         for i in image_ids:
@@ -212,6 +209,8 @@ class FruitConfig(coco.Config):
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
+    GPU_COUNT = 1
+    
     IMAGES_PER_GPU = 1
 
     # Number of classes (including background)
@@ -222,6 +221,15 @@ class FruitConfig(coco.Config):
 
     # Skip detections with < 80% confidence
     DETECTION_MIN_CONFIDENCE = 0.7
+    
+    #all following config to fit into 16G GPU
+    BACKBONE = "resnet50"
+
+    #ROIs in training
+    TRAIN_ROIS_PER_IMAGE = 200
+    
+    #number of instance per image
+    MAX_GT_INSTANCES = 100
 
 config = FruitConfig()
 config.display()
@@ -235,7 +243,12 @@ model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=30,
                 layers='heads')
- 
-    
+
+
+# run all layers, need to change config file . runs 4 secs per image 
+model.train(dataset_train, dataset_val,
+            learning_rate=config.LEARNING_RATE
+            epochs=40,
+            layers="all")
 
 
