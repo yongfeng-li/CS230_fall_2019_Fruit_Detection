@@ -17,10 +17,6 @@ class ParallelModel(KM.Model):
         super(ParallelModel, self).__init__(inputs=self.inner_model.inputs,
                                             outputs=merged_outputs)
 
-20191102:Update---
-
-uploaded the "MaskRCNN train" & coco data selection file. Anna 
-
 ------------------------------------------------------------------------------------
 
 Hi GUYS, ADDED some AWS tips, saw someone asking this on piazza
