@@ -14,30 +14,33 @@ import numpy as np
 import skimage.io
 import matplotlib
 import matplotlib.pyplot as plt
+import zipfile
+import urllib.request
+import shutil
+
 ROOT_DIR = os.path.abspath("D:/coco")
 
+from mrcnn.config import Config
+from mrcnn import model as modellib, utils
 from mrcnn import utils
 import mrcnn.model as modellib
 from mrcnn import visualize
 from mrcnn.model import MaskRCNN
 from sklearn.model_selection import train_test_split
+from pycocotools import mask as maskUtils
+from pycocotools.coco import COCO
 # =================Import COCO config
 # Root directory of the project
 sys.path.append(os.path.join(ROOT_DIR, "D:/CS 2301/Mask_RCNN/mrcnn/")) 
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
-import coco
-%matplotlib inline
+
 
 # =================Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 # Local path to trained weights file
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
-# Directory of images to run detection on
-IMAGE_DIR = os.path.join(ROOT_DIR, "train")
 
-subset='train'
-dataset_dir='D:\coco'
-dataset_dir = os.path.join(dataset_dir, subset)
+
 
 # =================Step 3:data procss==============    
 ############################################################
@@ -51,13 +54,12 @@ class FruitDataset(utils.Dataset):
         coco=COCO(annFile)  
         
         dataset_dir='D:\coco'
-        assert subset in ["train", "val"]
-        
+        assert subset in ["train1", "val1"]
             
         image_dir = os.path.join(dataset_dir, subset)
         
         #=====need to run the coco_preprocess.py code
-        if subset=='train':
+        if subset == "train1" : 
             image_ids=img_id_train
         else:
             image_ids=img_id_dev
@@ -66,6 +68,7 @@ class FruitDataset(utils.Dataset):
         class_ids = sorted(coco.getCatIds())
         for i in class_ids:
             self.add_class("coco", i, coco.loadCats(i)[0]["name"])
+
 
         # Add images
         for i in image_ids:
@@ -190,60 +193,70 @@ def build_coco_results(dataset, image_ids, rois, class_ids, scores, masks):
 ############################################################
 #  Defind Model Training 
 ############################################################
-
 dataset_train = FruitDataset()
-dataset_train.load_fruit("train")
+dataset_train.load_fruit(subset="train1")
 dataset_train.prepare()
 
+
 dataset_val = FruitDataset()
-dataset_val.load_fruit("val")
+dataset_val.load_fruit(subset="val1")
 dataset_val.prepare()
 
 # =================Step 5:Rewrite the config file==============
-class FruitConfig(coco.Config):
+class FruitConfig(Config):
     """Configuration for training on the toy  dataset.
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
     NAME = "fruit"
+    
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
-    GPU_COUNT = 1
+    LEARNING_RATE =0.01
     
+    GPU_COUNT = 2
+      
     IMAGES_PER_GPU = 1
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 5  # Background + balloon
+    NUM_CLASSES = 1 + 80  # Background + fruit
 
     # Number of training steps per epoch
     STEPS_PER_EPOCH = 100
 
     # Skip detections with < 80% confidence
-    DETECTION_MIN_CONFIDENCE = 0.7
+    DETECTION_MIN_CONFIDENCE = 0.85
+    
     
     #all following config to fit into 16G GPU
     BACKBONE = "resnet50"
+    
+    IMAGE_MIN_DIM = IMAGE_MAX_DIM = 128
 
     #ROIs in training
     TRAIN_ROIS_PER_IMAGE = 200
     
     #number of instance per image
     MAX_GT_INSTANCES = 100
+    
+
 
 config = FruitConfig()
 config.display()
+
+
 
 model = modellib.MaskRCNN(mode="training", config=config,model_dir=MODEL_DIR)
 model.load_weights(COCO_MODEL_PATH, by_name=True,exclude=[
             "mrcnn_class_logits", "mrcnn_bbox_fc",
             "mrcnn_bbox", "mrcnn_mask"])
+    
 
 model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=30,
+                epochs=20,
                 layers='heads')
-
 
 # run all layers, need to change config file . runs 4 secs per image 
 model.train(dataset_train, dataset_val,
